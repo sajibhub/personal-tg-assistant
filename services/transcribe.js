@@ -2,16 +2,44 @@ import fs from "node:fs";
 import { groq } from "../ai/groq.js";
 import { config } from "../config/env.js";
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+function getStatus(error) {
+  return error?.status ?? error?.response?.status ?? 0;
+}
+
+function isRetryable(error) {
+  const status = getStatus(error);
+
+  return (
+    status === 429 ||
+    status >= 500 ||
+    status === 408 ||
+    status === 0
+  );
+}
+
 /**
- * Transcribe audio with better accuracy than plain transcription:
- * - feeds recent chat words/names as a Whisper "prompt" so names, places and
- *   slang the people actually use get recognized (max 224 tokens per Groq docs)
- * - temperature 0 for deterministic output
- * - automatic fallback to the full whisper-large-v3 model if turbo fails
+ * Transcribe Telegram voice messages.
+ * Tries the configured model first, then Whisper Large V3.
  */
 export async function transcribeAudio(filePath, { contextHint = "" } = {}) {
-  const prompt = contextHint ? contextHint.slice(-800) : "";
-  const models = [...new Set([config.transcriptionModel, "whisper-large-v3"])];
+  if (!fs.existsSync(filePath)) {
+    console.error("Transcription error: audio file does not exist.");
+    return "";
+  }
+
+  const prompt = String(contextHint || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(-500);
+
+  const models = [
+    ...new Set([
+      config.transcriptionModel,
+      "whisper-large-v3"
+    ].filter(Boolean))
+  ];
 
   for (const model of models) {
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -23,31 +51,67 @@ export async function transcribeAudio(filePath, { contextHint = "" } = {}) {
           temperature: 0,
           ...(prompt ? { prompt } : {})
         });
-        const text = result.text?.trim() || "";
-        if (text) return text;
-        break; // empty result: don't retry same model
+
+        const text = result?.text?.trim() || "";
+
+        if (text) {
+          return text;
+        }
+
+        console.warn(`Empty transcription from ${model}.`);
+        break;
       } catch (error) {
-        const status = error?.status || error?.response?.status;
-        console.error(`Transcription failed (${model}, attempt ${attempt + 1}):`, error.message);
-        // Do not retry on auth/quota errors or invalid request — try next model instead.
-        if (status === 401 || status === 403 || status === 413 || status === 400) break;
-        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+        const status = getStatus(error);
+
+        console.error(
+          `Transcription failed: model=${model}, attempt=${attempt + 1}, status=${status}, error=${error.message}`
+        );
+
+        // Authentication, invalid request, and oversized audio
+        // should not be retried.
+        if (
+          [400, 401, 403, 413, 415, 422].includes(status)
+        ) {
+          break;
+        }
+
+        if (!isRetryable(error) || attempt === 1) {
+          break;
+        }
+
+        // Respect a provided Retry-After value when available.
+        const retryAfter = Number(
+          error?.headers?.["retry-after"] ??
+          error?.response?.headers?.["retry-after"]
+        );
+
+        const delay = Number.isFinite(retryAfter) && retryAfter > 0
+          ? Math.min(retryAfter * 1000, 15000)
+          : 1000 * (attempt + 1);
+
+        await sleep(delay);
       }
     }
   }
+
   return "";
 }
 
 /**
- * Build a short transcription prompt from recent conversation text so Whisper
- * recognizes recurring names and vocabulary of this specific chat.
+ * Build a short vocabulary hint from recent conversation messages.
  */
 export function buildTranscriptionHint(recentMessages = []) {
   const words = [];
-  for (const m of recentMessages.slice(-8)) {
-    for (const w of String(m.content || "").split(/\s+/)) {
-      if (w.length > 2 && words.length < 120) words.push(w);
+
+  for (const message of recentMessages.slice(-8)) {
+    const content = String(message.content || "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (content) {
+      words.push(content);
     }
   }
-  return words.join(" ").slice(0, 800);
+
+  return words.join(" ").slice(-500);
 }
