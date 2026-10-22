@@ -22,8 +22,8 @@ export const config = {
   fastModel: process.env.GROQ_FAST_MODEL || "openai/gpt-oss-20b",
   strongModel: process.env.GROQ_STRONG_MODEL || "openai/gpt-oss-120b",
   transcriptionModel: process.env.GROQ_TRANSCRIPTION_MODEL || "whisper-large-v3-turbo",
-  ttsModel: process.env.GROQ_TTS_MODEL || "playai-tts",
-  ttsVoice: process.env.GROQ_TTS_VOICE || "Celeste-PlayAI",
+  ttsModel: process.env.GROQ_TTS_MODEL || "canopylabs/orpheus-v1-english",
+  ttsVoice: process.env.GROQ_TTS_VOICE || "autumn",
 
   // Brain power
   brainMode: (process.env.BRAIN_MODE || "max").toLowerCase(),          // max | auto | fast
