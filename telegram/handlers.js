@@ -48,7 +48,7 @@ async function extractIncomingText(message) {
   const doc = message.media?.document;
   if (!doc || (!isVoiceNote(message) && !isRoundVideo(message))) return null;
 
-  const tempPath = path.join(os.tmpdir(), `telegram-voice-${randomUUID()}.audio`);
+  const tempPath = path.join(os.tmpdir(), `telegram-voice-${randomUUID()}.ogg`);
   try {
     await client.downloadMedia(message.media, { outputFile: tempPath });
     const hint = buildTranscriptionHint(await getRecentMessages(String(message.chatId), 8));
