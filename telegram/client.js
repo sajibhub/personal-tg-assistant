@@ -8,7 +8,14 @@ export const client = new TelegramClient(
   new StringSession(config.session),
   config.apiId,
   config.apiHash,
-  { connectionRetries: 5, autoReconnect: true }
+  {
+    connectionRetries: 5,
+    autoReconnect: true,
+    retryDelay: 2000,
+    deviceModel: "telegram-ai-brain",
+    systemVersion: "2.0",
+    appVersion: "2.0"
+  }
 );
 
 export async function connectTelegram() {

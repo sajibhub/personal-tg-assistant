@@ -1,19 +1,20 @@
 {
   "name": "telegram-ai-brain",
-  "version": "1.0.0",
-  "private": true,
+  "version": "2.0.0",
+  "description": "Smarter, faster Telegram AI brain: voice-to-voice replies, deep reasoning, parallel drafting, rolling summaries, self-healing memory",
   "type": "module",
-  "description": "Personal Telegram AI with GramJS, Groq, MongoDB long-term memory and semantic retrieval",
+  "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "node --watch app.js"
+    "start": "node app.js"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=18.17"
+  },
   "dependencies": {
-    "@huggingface/transformers": "^4.3.1",
-    "dotenv": "^18.0.8",
-    "groq-sdk": "^1.6.0",
-    "mongoose": "^9.11.3",
+    "@huggingface/transformers": "^3.7.5",
+    "dotenv": "^16.4.5",
+    "groq-sdk": "^1.0.0",
+    "mongoose": "^8.16.0",
     "telegram": "^2.26.22"
   }
 }
