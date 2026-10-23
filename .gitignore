@@ -1,4 +1,2 @@
-/node_modules
 .env
-/memory
-package-lock.json
+node_modules
