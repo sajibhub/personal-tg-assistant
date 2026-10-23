@@ -187,19 +187,13 @@ export function registerTelegramHandlers() {
           // Go online and mark the incoming message as read first
           await setStatus(true);
           try {
-            await client.invoke(
-              new Api.messages.ReadHistory({
-                peer: chatId,
-                maxId: message.id,
-              }),
-            );
+            await client.markAsRead(message.chatId, message.id);
           } catch (err) {
             console.warn(
               "Failed to mark message as read:",
               err?.message || err,
             );
           }
-
           // Wrap both reply generation and sending inside withTyping so typing starts immediately
           await withTyping(chatId, async () => {
             const { reply, contextUsed } = await createReply(
