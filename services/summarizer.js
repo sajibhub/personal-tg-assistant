@@ -54,7 +54,6 @@ export async function maybeSummarizeChat(chatId) {
       summary: summary || chat.summary || "",
       summaryUpToMessageId: maxId
     });
-    console.log(`Rolling summary updated for chat ${chatId} (through message ${maxId})`);
   } catch (error) {
     console.warn("Background summary failed:", error.message);
   }

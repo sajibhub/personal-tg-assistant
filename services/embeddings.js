@@ -20,7 +20,6 @@ export async function warmupEmbeddings() {
     const extractor = await getExtractor();
     await extractor("warmup", { pooling: "mean", normalize: true });
     warmedUp = true;
-    console.log("Embedding model warmed up");
   } catch (error) {
     console.warn("Embedding warmup failed (will retry on first use):", error.message);
     extractorPromise = undefined;
