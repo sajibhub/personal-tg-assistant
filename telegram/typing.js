@@ -2,6 +2,16 @@ import { Api } from "telegram";
 import { client } from "./client.js";
 import { config } from "../config/env.js";
 
+/** Fire-and-forget safe message send (never throws to caller). */
+export async function safeSendText(chatId, message, options = {}) {
+  try {
+    return await client.sendMessage(chatId, { message, linkPreview: false, ...options });
+  } catch (error) {
+    console.error("safeSendText failed:", error?.message || error);
+    return null;
+  }
+}
+
 /**
  * Show "typing..." continuously while a slow AI task runs.
  * Telegram typing status expires after ~5s, so we refresh it every 3.5s.
