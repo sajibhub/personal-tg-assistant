@@ -136,20 +136,24 @@ export function registerTelegramHandlers() {
       if (!config.autoReply || chat.autoReply === false) return;
 
       await enqueue(chatId, async () => {
-        const { reply, contextUsed } = await createReply(chatId, incoming.text, { isVoice: incoming.isVoice });
-        if (!reply) return;
+        // Wrap both reply generation and sending inside withTyping so typing starts immediately
+        await withTyping(chatId, async () => {
+          const { reply, contextUsed } = await createReply(chatId, incoming.text, { isVoice: incoming.isVoice });
+          if (!reply) return;
 
-        // Voice in -> voice out (with text fallback when TTS can't speak it).
-        const asVoice = incoming.isVoice && config.voiceReplies && chat.autoReply !== false;
-        const result = await withTyping(chatId, () =>
-          sendReply(chatId, reply, { replyTo: message.id, asVoice })
-        );
+          // Voice in -> voice out (with text fallback when TTS can't speak it).
+          const asVoice = incoming.isVoice && config.voiceReplies && chat.autoReply !== false;
+          
+          const result = await sendReply(chatId, reply, { replyTo: message.id, asVoice });
+          if (!result) return;
 
-        if (!result) return;
-        await saveMessage({
-          chatId, messageId: result.sent.id, role: "assistant",
-          content: reply.slice(0, 4000),
-          replyToMessageId: message.id
+          await saveMessage({
+            chatId,
+            messageId: result.sent.id,
+            role: "assistant",
+            content: reply.slice(0, 4000),
+            replyToMessageId: message.id
+          });
         });
       });
     } catch (error) {
