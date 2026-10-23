@@ -184,6 +184,22 @@ export function registerTelegramHandlers() {
         if (!config.autoReply || chat.autoReply === false) return;
 
         await enqueue(chatId, async () => {
+          // Go online and mark the incoming message as read first
+          await setStatus(true);
+          try {
+            await client.invoke(
+              new Api.messages.ReadHistory({
+                peer: chatId,
+                maxId: message.id,
+              }),
+            );
+          } catch (err) {
+            console.warn(
+              "Failed to mark message as read:",
+              err?.message || err,
+            );
+          }
+
           // Wrap both reply generation and sending inside withTyping so typing starts immediately
           await withTyping(chatId, async () => {
             const { reply, contextUsed } = await createReply(
@@ -214,8 +230,8 @@ export function registerTelegramHandlers() {
             });
           });
 
-          // 🕒 Pick a random time up to 5 seconds (0 to 5000 milliseconds)
-          const randomDelay = Math.floor(Math.random() * 5000);
+          // 🕒 Pick a random time up to 5 seconds (0 to 10000 milliseconds)
+          const randomDelay = Math.floor(Math.random() * 10000);
           await new Promise((resolve) => setTimeout(resolve, randomDelay));
 
           // 📴 Go offline after the random delay (false = offline)
