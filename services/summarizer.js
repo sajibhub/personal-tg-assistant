@@ -3,8 +3,7 @@ import Chat from "../models/Chat.js";
 import { SUMMARY_PROMPT } from "../ai/prompts.js";
 import { chatCompletion } from "../ai/groq.js";
 import { config } from "../config/env.js";
-import { getRecentMessages, getChat, updateChat } from "./conversationStore.js";
-
+import { getRecentMessages, getChat, updateChat } from "../memory/conversationStore.js";   
 /**
  * Rolling conversation summary.
  * Every SUMMARY_EVERY user messages the background task merges the previous
